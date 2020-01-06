@@ -1,0 +1,35 @@
+-- latest date for each client
+
+with main as
+(
+	SELECT MarketID,Dates FROM TARA.dbo.simtslookup lu INNER JOIN TARA.dbo.simts ts ON lu.ts_id = ts.ts_id WHERE lu.simid = 4388
+),
+new as
+(
+    select MarketID, Dates, row_number()
+	over (partition by MarketID order by Dates desc) as rn
+    from main
+)
+select MarketID, Dates from new where new.rn = 1
+
+
+
+CTE common table expressesion
+
+with main as
+(
+	SELECT MarketID,Dates, IndicatorID FROM TARA.dbo.simtslookup lu INNER JOIN TARA.dbo.simts ts ON lu.ts_id = ts.ts_id WHERE lu.simid = 4388 and IndicatorID = 'PortfolioWeight'
+),
+new as
+(
+    select MarketID, IndicatorID, max(Dates) as MaxDate
+    from main
+    group by MarketID, IndicatorID
+),
+withdupl as
+(
+select main.MarketID, main.IndicatorID, Dates 
+from main inner join new
+on main.MarketID = new.MarketID and main.Dates = new.MaxDate
+)
+select DISTINCT  * from withdupl
